@@ -1,0 +1,53 @@
+%define name    @PACKAGE@
+%define version @VERSION@
+Summary: A dockapp to monitor memory/swap usage for WindowMaker.
+Name: %{name}
+Version: %{version}
+Release: 1
+Source: %{name}-%{version}.tar.gz
+Copyright: GPL
+Group: applications
+BuildRoot: %{_tmppath}/%{name}-%{version}-%{PACKAGE_RELEASE}
+Packager: Francisco Vides Fernandez <pax@dedalo-ing.com>
+
+
+%description
+WMMemMon is a program to monitor memory/swap usages. It is a dockapp that is
+supported by X window managers such as Window Maker, AfterStep, BlackBox, and
+Enlightenment. The current memory usage is displaied as the outside pie-slices.
+The swap usage is represented by the inside slices. It has an LCD look-alike
+user interface. The back-light may be turned on/off by clicking the mouse button
+over the appliacation.
+
+%prep
+rm -rf $RPM_BUILD_ROOT
+
+%setup
+
+
+%build
+./configure --prefix=/usr
+make
+
+%install
+make DESTDIR=$RPM_BUILD_ROOT install
+
+%clean
+rm -rf $RPM_BUILD_ROOT
+
+%files
+%doc AUTHORS COPYING ChangeLog INSTALL NEWS README THANKS TODO
+/usr/bin/wmmemmon
+
+
+%changelog
+* Wed Mar 13 2002 Seiichi SATO <ssato@sh.rim.or.jp>
+  - fixed %build section ('--prefix=$DESTDIR/usr' to '--prefix=/usr')
+  - fixed %install section
+    ('make install' to 'make DESTDIR=$RPM_BUILD_ROOT install')
+
+* Thu Jan 24 2002 Seiichi SATO<ssato@sh.rim.or.jp>
+  - Changed spec file name to all-lower-case alphanumeric
+
+* Wed Oct 04 2001 Seiichi SATO<ssato@sh.rim.or.jp>
+  - Changed description section.

@@ -1,4 +1,13 @@
-$Id: ChangeLog,v 1.6 2003/09/15 06:44:52 sch Exp $
+2022 Oct 10
+  * version 1.2.0 released.
+  * change to upstream libdockap
+  * replaced memhog with memster
+  * removed of the CVS/RCS $Id lines
+  * modified code style
+  * massaged autotools & co
+  * switched to git
+  * removed command line options -lc, -t, -bw, -w and -wp
+  * renamed command line options -bl -> -b, -am -> -m, -as -> -s
 
 2003 Sep 15
   * version 1.0.1 released.

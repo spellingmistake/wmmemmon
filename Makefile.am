@@ -1,3 +1,3 @@
-# $Id: Makefile.am,v 1.3 2002/10/14 12:36:30 sch Exp $
+MAINTAINERCLEANFILES = Makefile.in aclocal.m4 config.h.in configure depcomp install-sh missing compile config.guess config.h.in~ config.sub
 
-SUBDIRS = src libdockapp icons contrib doc
+SUBDIRS = src contrib doc

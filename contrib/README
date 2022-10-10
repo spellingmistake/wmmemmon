@@ -1,10 +1,7 @@
-$Id: README,v 1.1.1.1 2002/10/14 12:23:26 sch Exp $
-
 *** WMMemMon.spec - spec file for rpm
 author:
 Francisco Vides Fernandez <pax@dedalo-ing.com>
 
-
-** memhog.c - A program that allocates a lot of memory
+** memster.c - A program that allocates a lot of memory
 author:
-Jonathan C. Patschke <jp@celestrion.net>
+Thomas Egerer <thomas.egerer@port22.eu>

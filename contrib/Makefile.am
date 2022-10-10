@@ -1,4 +1,12 @@
-# $Id: Makefile.am,v 1.1.1.1 2002/10/14 12:23:26 sch Exp $
+bin_PROGRAMS = memster
 
-EXTRA_DIST = README wmmemmon.spec.in memhog.c
+AM_CPPFLAGS = \
+	$(GLOBAL_CPPFLAGS)
 
+AM_CFLAGS = \
+	$(GLOBAL_CFLAGS)
+
+memster_SOURCES = \
+	memster.c
+
+MAINTAINERCLEANFILES = Makefile.in
