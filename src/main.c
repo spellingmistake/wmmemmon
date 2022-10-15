@@ -33,11 +33,29 @@
 #include "parts_mem.xpm"
 #include "parts_swap.xpm"
 
-#define SIZE 58
+#define CANVAS_SIZE 58
+
+#define MEM_HEIGHT  44
+#define MEM_WIDTH   22
+#define MEM_LX       7
+#define MEM_RX      29
+#define MEM_Y        7
+
+#define SWP_HEIGHT  22
+#define SWP_WIDTH   11
+#define SWP_LX      18
+#define SWP_RX      29
+#define SWP_Y       18
+
+#define RESOLUTION  10
+#define STEPS       (100 / RESOLUTION)
+
+#define countof(x) (sizeof((x)) / sizeof((x)[0]))
 
 static int finalize;
 
 typedef struct config_t config_t;
+typedef struct offset_table_t offset_table_t;
 
 struct config_t {
 	char *display_name;
@@ -46,6 +64,11 @@ struct config_t {
 	size_t alarm_mem;
 	size_t alarm_swap;
 	mem_options_t mem_opts;
+};
+
+struct offset_table_t {
+	int width;
+	int y_offset;
 };
 
 enum pixmap_type_t {
@@ -165,90 +188,121 @@ static void parse_arguments(int argc, char *argv[], config_t *config)
 	}
 }
 
-/**
- * pixmaps: backdrop_on, backdrop_off, memory, swap, canvas
- */
-static void draw(DAShapedPixmap *pixmaps[], int memory[], int lit)
+static inline void calc_x_offsets(int memory, int *xl, int *xr, int width)
 {
-	int ym, ys, usage_mem, usage_swp;
-
-	usage_mem = memory[0];
-	usage_swp = memory[1];
-
-	usage_mem /= 10;
-	usage_swp /= 10;
-
-	if (usage_mem > 10)
+	if (memory > (RESOLUTION / 2))
 	{
-		usage_mem = 10;
-	}
-
-	if (lit)
-	{
-		ym = 40;
-		ys = 21;
+		*xl = memory;
+		*xr = (RESOLUTION / 2);
 	}
 	else
 	{
-		ym = ys = 0;
+		*xl = 0;
+		*xr = memory;
 	}
 
-	DASPCopyArea(pixmaps[lit], pixmaps[CANVAS], 0, 0, SIZE, SIZE, 0, 0);
+	*xl *= width;
+	*xr *= width;
+}
 
-	/* draw memory usage - outside */
-	if (usage_mem != 0 && usage_mem < 5)
+static void draw_mem_usage(DAShapedPixmap *pixmaps[], int memory[], int lit)
+{
+	int xl, xr, xo, yo, i;
+
+	calc_x_offsets(memory[0], &xl, &xr, MEM_WIDTH);
+
+	/* draw memory usage - outside, right part, 0% - 50% */
+	if (xr)
 	{
-		DASPCopyArea(pixmaps[PRTS_MEM], pixmaps[CANVAS],
-				(usage_mem - 1) * 19, ym, 19, 40, 30, 9);
-	}
-	if (usage_mem >= 5)
-	{
-		DASPCopyArea(pixmaps[PRTS_MEM], pixmaps[CANVAS],
-				76, ym, 19, 40, 30, 9);
-	}
-	if (usage_mem > 5)
-	{
-		DASPCopyArea(pixmaps[PRTS_MEM], pixmaps[CANVAS],
-				95 + (usage_mem - 6) * 20, ym, 20, 40, 9, 9);
+		xr -= MEM_WIDTH;
+		DASPCopyArea(pixmaps[PRTS_MEM], pixmaps[CANVAS], xr, MEM_HEIGHT * lit,
+				MEM_WIDTH, MEM_HEIGHT, MEM_RX, MEM_Y);
 	}
 
-	/* draw usage_swp usage - inside */
-	if (usage_swp != 0 && usage_swp < 5)
+	/* draw memory usage - outside, right part, 51% - 100% */
+	if (xl > (5 * MEM_WIDTH))
 	{
-		DASPCopyArea(pixmaps[PRTS_SWP], pixmaps[CANVAS],
-				(usage_swp - 1) * 10, ys, 4, 21, 30,19);
-		DASPCopyArea(pixmaps[PRTS_SWP], pixmaps[CANVAS],
-				4 + (usage_swp - 1) * 10, ys + 2, 3, 16, 34, 21);
-		DASPCopyArea(pixmaps[PRTS_SWP], pixmaps[CANVAS],
-				7 + (usage_swp - 1) * 10, ys + 4, 2, 13, 37, 23);
-		DASPCopyArea(pixmaps[PRTS_SWP], pixmaps[CANVAS],
-				9 + (usage_swp - 1) * 10, ys + 8, 1, 4, 39, 27);
+		xl -= MEM_WIDTH;
+		DASPCopyArea(pixmaps[PRTS_MEM], pixmaps[CANVAS], xl, MEM_HEIGHT * lit,
+				MEM_WIDTH, MEM_HEIGHT, MEM_LX, MEM_Y);
 	}
-	if (usage_swp >= 5)
+}
+
+static inline void func(DAShapedPixmap *pixmaps[], int x1, int x2, int yo,
+		int sign, int lit, int start, int end,
+		const offset_table_t *offset_table)
+{
+	int xo, i;
+
+	if (x1)
 	{
-		DASPCopyArea(pixmaps[PRTS_SWP], pixmaps[CANVAS],
-				40, ys, 4,21, 30,19);
-		DASPCopyArea(pixmaps[PRTS_SWP], pixmaps[CANVAS],
-				44, ys + 2, 3, 16, 34, 21);
-		DASPCopyArea(pixmaps[PRTS_SWP], pixmaps[CANVAS],
-				47, ys + 4, 2, 13, 37, 23);
-		DASPCopyArea(pixmaps[PRTS_SWP], pixmaps[CANVAS],
-				49, ys + 8, 1, 4, 39, 27);
+		xo = 0;
+		x1 -= SWP_WIDTH;
+		i = start;
+
+		do
+		{
+			DASPCopyArea(pixmaps[PRTS_SWP], pixmaps[CANVAS],
+					x1 + xo, SWP_HEIGHT * lit + yo,
+					offset_table[i].width, SWP_HEIGHT - 2 * yo,
+					x2 + xo, SWP_Y + yo);
+			xo += offset_table[i].width;
+			yo += offset_table[i].y_offset * sign;
+
+			i += sign;
+		}
+		while (i != end);
 	}
-	if (usage_swp > 5)
+}
+
+static void draw_swap_usage(DAShapedPixmap *pixmaps[], int memory[], int lit)
+{
+	int xl, xr, xo, yo, sign, i;
+	// TODO: if we can draw the swap usage at once, this would simplify the
+	// code massively
+	static const offset_table_t offsets[] = {
+		{ 5, 1, },
+		{ 1, 1, },
+		{ 1, 1, },
+		{ 1, 1, },
+		{ 1, 1, },
+		{ 1, 1, },
+		{ 1, 1, },
+	};
+
+	calc_x_offsets(memory[1], &xl, &xr, SWP_WIDTH);
+
+	/* draw swap usage - inside, right part, 0% - 50% */
+	func(pixmaps, xr, SWP_RX, 0, 1, lit, 0, countof(offsets), offsets);
+
+	/* draw swap usage - inside, left part, 51% - 100% */
+	func(pixmaps, xl, SWP_LX, 6, -1, lit, countof(offsets) - 1, 0 - 1, offsets);
+}
+
+/**
+ * pixmaps: backdrop_on, backdrop_off, memory, swap, canvas
+ */
+static void draw_canvas(DAShapedPixmap *pixmaps[], const int memory[], int lit)
+{
+	int xr, xl, xo, yo, i, sign, mem[2] = {
+		memory[0] / STEPS,
+		memory[1] / STEPS,
+	};
+
+	if (mem[0] > (100 / STEPS))
 	{
-		DASPCopyArea(pixmaps[PRTS_SWP], pixmaps[CANVAS],
-				50 + (usage_swp - 6) * 10, ys + 5, 2, 11, 19, 24);
-		DASPCopyArea(pixmaps[PRTS_SWP], pixmaps[CANVAS],
-				52 + (usage_swp - 6) * 10, ys + 2, 2, 17, 21, 21);
-		DASPCopyArea(pixmaps[PRTS_SWP], pixmaps[CANVAS],
-				54 + (usage_swp - 6) * 10, ys + 1, 2, 19, 23, 20);
-		DASPCopyArea(pixmaps[PRTS_SWP], pixmaps[CANVAS],
-				56 + (usage_swp - 6) * 10, ys, 4, 21, 25, 19);
+		mem[0] = (100 / STEPS);
 	}
+
+	/* reset canvas with background image */
+	DASPCopyArea(pixmaps[lit], pixmaps[CANVAS], 0, 0,
+			CANVAS_SIZE, CANVAS_SIZE, 0, 0);
+
+	draw_mem_usage(pixmaps, mem, lit);
+	draw_swap_usage(pixmaps, mem, lit);
 
 	XCopyArea(DAGetDisplay(NULL), pixmaps[CANVAS]->pixmap, DAWindow, DAGC, 0, 0,
-			SIZE, SIZE, 0, 0);
+			CANVAS_SIZE, CANVAS_SIZE, 0, 0);
 }
 
 int main(int argc, char *argv[])
@@ -264,9 +318,10 @@ int main(int argc, char *argv[])
 
 	parse_arguments(argc, argv, &config);
 
+	/* to make DAGetDisplay return DADisplay */
 	DASetExpectedVersion(20030126);
 	DAOpenDisplay(config.display_name, argc, argv);
-	DACreateIcon(PACKAGE, SIZE, SIZE, argc, argv);
+	DACreateIcon(PACKAGE, CANVAS_SIZE, CANVAS_SIZE, argc, argv);
 
 	pixmaps[BACK_OFF] = DAMakeShapedPixmapFromData(backdrop_off_xpm);
 	pixmaps[BACK_ON] = DAMakeShapedPixmapFromData(backdrop_on_xpm);
@@ -275,22 +330,22 @@ int main(int argc, char *argv[])
 	pixmaps[CANVAS] = DAMakeShapedPixmap();
 
 	DASetShapeWithOffsetForWindow(DAWindow, pixmaps[BACK_OFF]->shape, 0, 0);
-	draw(pixmaps, memory_usage, config.lit);
+	draw_canvas(pixmaps, memory_usage, config.lit);
 	DASetPixmap(pixmaps[CANVAS]->pixmap);
 	DAShow();
 
 	/* Splash */
-	for (i = 0; i <= 20; i++)
+	for (i = 0; i <= (2 * RESOLUTION); i++)
 	{
 		if (i <= 10)
 		{	/* outside */
-			memory_usage[0] = i * 10;
+			memory_usage[0] = i * STEPS;
 			memory_usage[1] = 0;
 		}
 		else
 		{	/* inside */
 			memory_usage[0] = 100;
-			memory_usage[1] = (i - 10) * 10;
+			memory_usage[1] = (i - RESOLUTION) * STEPS;
 		}
 		draw(pixmaps, memory_usage, config.lit);
 		if (DANextEventOrTimeout(&event, 80))
@@ -336,7 +391,7 @@ int main(int argc, char *argv[])
 			}
 		}
 
-		draw(pixmaps, memory_usage, config.lit);
+		draw_canvas(pixmaps, memory_usage, config.lit);
 	}
 
 	for (i = 0; i < (sizeof(pixmaps) / sizeof(pixmaps[BACK_ON])); ++i)
