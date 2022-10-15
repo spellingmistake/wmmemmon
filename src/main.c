@@ -323,10 +323,10 @@ int main(int argc, char *argv[])
 	DAOpenDisplay(config.display_name, argc, argv);
 	DACreateIcon(PACKAGE, CANVAS_SIZE, CANVAS_SIZE, argc, argv);
 
-	pixmaps[BACK_OFF] = DAMakeShapedPixmapFromData(backdrop_off_xpm);
-	pixmaps[BACK_ON] = DAMakeShapedPixmapFromData(backdrop_on_xpm);
-	pixmaps[PRTS_MEM] = DAMakeShapedPixmapFromData(parts_mem_xpm);
-	pixmaps[PRTS_SWP] = DAMakeShapedPixmapFromData(parts_swap_xpm);
+	pixmaps[BACK_OFF] = DAMakeShapedPixmapFromData(backdrop_off);
+	pixmaps[BACK_ON] = DAMakeShapedPixmapFromData(backdrop_on);
+	pixmaps[PRTS_MEM] = DAMakeShapedPixmapFromData(parts_mem);
+	pixmaps[PRTS_SWP] = DAMakeShapedPixmapFromData(parts_swap);
 	pixmaps[CANVAS] = DAMakeShapedPixmap();
 
 	DASetShapeWithOffsetForWindow(DAWindow, pixmaps[BACK_OFF]->shape, 0, 0);
