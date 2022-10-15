@@ -334,20 +334,30 @@ int main(int argc, char *argv[])
 	DASetPixmap(pixmaps[CANVAS]->pixmap);
 	DAShow();
 
-	/* Splash */
-	for (i = 0; i <= (2 * RESOLUTION); i++)
+	/* splash */
+	for (i = 0; i <= (4 * RESOLUTION); i++)
 	{
-		if (i <= 10)
-		{	/* outside */
+		if (i <= RESOLUTION)
+		{	/* increasing memory usage */
 			memory_usage[0] = i * STEPS;
 			memory_usage[1] = 0;
 		}
-		else
-		{	/* inside */
+		else if (i <= (2 * RESOLUTION))
+		{	/* increasing swap usage */
 			memory_usage[0] = 100;
 			memory_usage[1] = (i - RESOLUTION) * STEPS;
 		}
-		draw(pixmaps, memory_usage, config.lit);
+		else if (i <= (3 * RESOLUTION))
+		{	/* decreasing swap usage */
+			memory_usage[0] = 100;
+			memory_usage[1] = 100 - ((i - 2 * RESOLUTION) * STEPS);
+		}
+		else
+		{	/* decreasing memory usage */
+			memory_usage[0] = 100 - ((i - 3 * RESOLUTION) * STEPS);
+			memory_usage[1] = 0;
+		}
+		draw_canvas(pixmaps, memory_usage, config.lit);
 		if (DANextEventOrTimeout(&event, 80))
 		{
 			break;
