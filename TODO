@@ -1,0 +1,5 @@
+$Id: TODO,v 1.2 2003/03/09 06:32:38 sch Exp $
+
+* other OS support (patches are welcome)
+* optimize drawing-routines (MIT-SHM)
+* Non-GNU make fix

@@ -1,0 +1,194 @@
+$Id: ChangeLog,v 1.6 2003/09/15 06:44:52 sch Exp $
+
+2003 Sep 15
+  * version 1.0.1 released.
+
+2003 Sep 15
+  * mem_linux.c: fixed a typo.
+
+2003 Jul 30
+  * mem_linux.c: fixed a problem with kernel 2.6.x
+    (Thanks to dean <ioooioiiooi at hotmail.com> for bug report)
+
+2003 Mar 9
+  * version 1.0.0 released
+
+2002 Dec 9
+  * mem_darwin.c: added for Darwin support
+  (Landon Fuller <landonf at opendarwin.org>)
+
+2002 Aug 31
+  * memhog.c: added (Jonathan C. Patschke <jp at celestrion.net>)
+
+2002 Aug 30
+  * mem_irix: added for IRIX support
+    (Jonathan C. Patschke <jp at celestrion.net>)
+
+2002 Aug 17
+  * mem_cygwin: added for Cygwin support
+
+2002 Aug 16
+  * mem_netbsd.c: added for NetBSD support
+  * README: added 'for GNOME users' section
+
+2002 May 29
+  * dockapp.c : updated, taken from wmcpuload-0.1.0 (new -wp option)
+  * dockapp.c, dockapp.h: moved to libdockapp/dockapp.[ch]
+  * libdockapp/{COPYING,AUTHORS}: added (taken from libdockapp-0.4.0)
+  * configure.ac: removed '-L/usr/local/lib' '-I/usr/local/include' from
+    *_search_path
+
+2002 March 27
+  * configure.ac: changed $host_os to $target_os for cross-compiling (I missed
+    merging in 0.7.0)
+
+2002 March 23
+  * version 0.7.0 released
+  * configure.ac: added AC_CANONICAL_TARGET for cross-compiling
+  * configure.ac: changed $host_oc to $target_os for cross-compiling
+
+2002 March 22
+  * configure.in: renamed as..
+  * configure.ac: this (for autoconf 2.50 or later)
+  * configure.ac: removed some obsolete macros
+  * configure.ac: added 2nd/3rd arguments of `AC_DEFINE' for config.h
+  * acconfig.h: removed
+  * dockapp.h: added header check (taken from autoconf manual)
+
+2002 March 11
+  * changed archive names into all-lower-case.
+
+2002 March 01
+  * backdrop_off.xpm: changed background color brightly
+
+2002 February 13
+  * dockapp.c: removed dockapp_XSync(), dockapp_XFreePixmap()
+  * dockapp.c: changed scope the 'display' variable
+  * dockapp.c: removed dockapp_iswindowed(), dockapp_set_windowed(),
+               dockapp_activate_brokenwm_fix()
+
+2002 February 11
+  * main.c: fixed a typo in help messages. (Patrick Li<pat at FreeBSD.org>)
+
+2002 February 10
+  * version 0.6.0 released
+
+2002 February 03
+  * added manpage
+
+2002 January 30
+  * mem_freebsd.c: changed name list of symbol table
+  * mem_openbsd.c: fixed a bug in get_swap_usage()
+
+2002 January 29
+  * dockapp.c: added backgroud (look-alike dock's panel) in windowed mode
+  * mem_linux.c: internal change (added skip_line(), skip_token(),
+                 skip_multiple_token())
+  * mem_linux.c: fixed a bug with examining swap
+
+2002 January 27
+  * update README (alarm mode)
+  * main.c: added check for '--alarm-mem' & '--alarm-swap'
+  * main.c: fixed a bug with switching of alarm mode
+  * mem_linux.c: added support new format of /proc/meminfo
+                 (linux kernel >= 2.5.1)
+
+2002 January 26
+  * added alarm mode (Michal Kowalczuk <sammael at brzydal.eu.org>)
+
+2002 January 24
+  * mem_openbsd.c: code cleanup/review
+
+2002 January 23
+  * main.c: code cleanup/review
+  * dockapp.c: code cleanup/review
+
+2002 January 20
+  * dockapp.c: rewrote most of code for the future extensions.
+  * dockapp.c: added wm protocols "WM_DELETE_WINDOW"
+
+2002 January 17
+  * mem_common.c: removed
+
+2002 January 15
+  * mem_linux.c: fixed a bug with swapless GNU/Linux system.
+
+2002 January 05
+  * added OpenBSD support
+
+2002 January 01
+  * added '--ignore-buffers','--ignore-cached', '--ignore-wired'
+    options.(GNU/Linux, FreeBSD) ...see README
+  * chaned the logic that be used to calculate the percentage of the memory in
+    mem_linux.c (default: count buffers and cached)
+
+2001 December 31
+  * fixed a bug in DA_Show() (arguments of XMapRaised())
+    (Thanks to Bram De Smet <bram at menteb.org> for report)
+  * changed way of calculating percentage memory/swap usage in mem_linux.c
+  * added FAQ section to README
+  * updated icons
+
+2001 November 06
+  * renamed wmmemmon.c to main.c
+  * renamed mem_common.h mem.h
+  * made small color adjustment for back-light
+
+2001 October 16
+  * made small modifications to dockapp.c (freeing the memory that is used for
+    wmHints, removing d_width/d_height, and adding a argument for event-mask to
+    DA_Initialize())
+
+2001 September 25
+  * added opening splash animation.
+
+2001 September 24
+  * version 0.5.2 released
+  * fixed a typo in the help messages.
+
+2001 September 24
+  * version 0.5.1 released
+  * fixed some typo in mem_freebsd.c (Patrick Li <pat at databits.net>)
+  * fixed some typo in mem_solaris.c
+
+2001 September 23
+  * version 0.5.0 released
+  * changed the output of the error messages from stdout to stderr.
+  * changed to remove the dependence on libdockapp
+  * added '-bw --broken-wm' option to fix a problem with enlightenment window
+    manager
+  * included WMMemMon.spec
+    (Francisco Vides Fernandez <pax at dedalo-ing.com>)
+  * added '-lc, --light-color' option.
+
+2001 July 24
+  * version 0.3.1 released
+  * changed to get rid of compiler warning messages with gcc
+    on Linux and FreeBSD.
+
+2001 July 22
+  * version 0.3.0 released
+  * added the icons for Mandrake GNU/Linux
+
+2001 June 12
+  * changed the logic that be used to calculate the percentage of the
+    memory/swap in mem_linux.c
+    (John McCutchan <ttb at tentacle.dhs.org>)
+
+2001 June 07
+  * separated wmmemmon.xpm to
+    backdrop_off.xpm/backdrop_on.xpm/parts_mem.xpm/parts_swap.xpm
+  * changed the drawing routine to support antialiased graphics
+
+2001 May 21
+  * version 0.2.0 released.
+  * removed signal-handler (SIGALRM with update_mem())
+  * added a event(timer expired) to DACallbacks
+  * code review/cleanup
+
+2001 May 17
+  * added Solaris support (Jonathan Lang <lang at synopsys.COM>)
+
+2001 May 02
+  * version 0.1.0 released.(initial release)
+

@@ -1,0 +1,13 @@
+$Id: AUTHORS,v 1.2 2002/12/08 17:11:10 sch Exp $
+
+Main Author:
+Seiichi SATO <ssato@sh.rim.or.jp>
+
+Solaris port:
+Jonathan Lang <lang@synopsys.com>
+
+IRIX port:
+Jonathan C. Patschke <jp@celestrion.net>
+
+Darwin port:
+Landon Fuller <landonf@opendarwin.org>

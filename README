@@ -1,0 +1,144 @@
+$Id: README,v 1.3 2002/12/09 07:56:07 sch Exp $
+
+WMMemMon - A dockapp to monitor memory/swap usages
+
+General Information
+===================
+WMMemMon is a program to monitor memory/swap usages. It is a dockapp that is
+supported by X window managers such as Window Maker, AfterStep, BlackBox, and
+Enlightenment.
+
+The current memory usage is displaied as the outside pie-slices.  The swap usage
+is represented by the inside slices. It has an LCD look-alike user interface.
+The back-light may be turned on/off by clicking the mouse button over the
+appliacation. If the usage hits a certain threshold, an alarm-mode will alert
+you by turning back-light on.
+
+It runs on GNU/Linux / FreeBSD / OpenBSD / NetBSD / Solaris / Cygwin / IRIX /
+Darwin.
+
+Installation
+============
+See the file 'INSTALL' for instructions.
+
+
+Copyright
+=========
+GPL applies all portions of the code I wrote. Please see COPYING file.
+
+
+Usage
+=====
+$ wmmemmon [OPTIONS]
+ -d,  --display <string>       display to use
+ -t,  --title <string>         application title name
+ -bl, --backlight              turn on back-light
+ -lc, --light-color <color>    back-light color (rgb:6E/C6/3B is default)
+ -i,  --interval <number>      number of secs between updates (1 is default)
+ -b,  --ignore-buffers         ignore buffers
+ -c,  --ignore-cached          ignore cached pages
+ -wr, --ignore-wired           ignore wired pages
+ -h,  --help                   show this help text and exit
+ -v,  --version                show program version and exit
+ -w,  --windowed               run the application in windowed mode
+ -wp, --windowed-withpanel     run the application in windowed mode
+                               with background panel
+ -bw, --broken-wm              activate broken window manager fix
+ -am, --alarm-mem <percentage> activate alarm mode. <percentage> is threshold
+                               of percentage from 0 to 100.(90 is default)
+ -as, --alarm-swap<percentage> activate alarm mode. <percentage> is threshold
+                               of percentage from 0 to 100.(50 is default)
+
+NOTES:
+- '-b,  --ignore-buffers' option is activated under GNU/Linux
+- '-c,  --ignore-cached'  option is activated under GNU/Linux / FreeBSD
+- '-wr, --ignore-wired'   option is activated under FreeBSD
+
+GNU/Linux(/proc/meminfo):
+|<------------------------ used --------------------------->|<---- free ---->|
+|                  |<----- buffers ----->|<---- cached ---->|                |
+|                  |                     |                  |                |
+|<============================== T O T A L =================================>|
+
+FreeBSD(kvm):
+|<------------------------ used --------------------------->|<---- free ---->|
+|<-- active -->|<-- inactive -->|<-- wired -->|<-- cached ->|                |
+|              |                |             |             |                |
+|<============================== T O T A L =================================>|
+
+ -> More Information: FreeBSD Developer's Handbook
+ http://www.freebsd.org/doc/en_US.ISO8859-1/books/developers-handbook/index.html
+ http://www.freebsd.org/doc/en_US.ISO8859-1/books/developers-handbook/vm.html
+
+OpenBSD, NetBSD (sysctl):
+|<------------------------ used --------------------------->|<---- free ---->|
+|                                                           |                |
+|                                                           |                |
+|<============================== T O T A L =================================>|
+
+Solaris:
+< not written yet >
+
+IRIX:
+< not written yet >
+
+For Afterstep Users
+===================
+Add this line to your ~/GNUstep/Library/AfterStep/wharf:
+
+ *Wharf wmmemmon - Swallow "wmmemmon" wmmemmon -w &
+
+
+For GNOME users
+===============
+If you want to run wmmemmon as swallowed application inside the GNOME panel,
+open 'Create swallow Applet' dialog and enter the values as below.
+
+  1. Title application to swallow: <title name> - specified with '-t' option
+  2. Command (optional): wmmemmon -w -t <title name>
+  3. width: 62
+  4. height: 62
+
+NOTE: GNOME2 does not support the swallowed application.
+
+
+For Enlightenment users
+=======================
+Use '-bw, --broken-wm' option.
+
+
+For Golem users
+===============
+Add following entry to your ~/.golem/plugins/pier/rc
+
+  param "item" "dock" {
+          param "cmd" "exec wmmemmon";
+          param "class" "wmmemmon.DockApp";
+  }
+
+
+Frequently Asked Questions
+==========================
+
+Q) Which window managers do support dockapps?
+A) - Window Maker  http://www.windowmaker.org/
+   - AfterStep     http://www.afterstep.org/
+   - Blackbox      http://blackboxwm.sourceforge.net/
+   - Enlightenment http://www.enlightenment.org/
+   - Fluxbox       http://fluxbox.sourceforge.net/
+   - Waimea        http://waimea.sourceforge.net/
+   - PWM           http://www.students.tut.fi/~tuomov/pwm/
+   - Golem         http://golem.sourceforge.net/
+
+Q) Can I set the initial size?
+A) No. As far as I know, there is no dockapp which can be set the size.
+
+
+Bug reports
+===========
+Please send e-mail to ssato@sh.rim.or.jp.
+
+
+URL
+===
+http://www.sh.rim.or.jp/~ssato/dockapp/#wmmemmon
