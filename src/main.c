@@ -53,8 +53,9 @@ typedef struct offset_table_t offset_table_t;
 typedef struct pixmap_coords_t pixmap_coords_t;
 
 struct config_t {
-	char *display_name;
 	int lit;
+	bool splash;
+	char *display_name;
 	size_t update_interval;
 	size_t alarm_mem;
 	size_t alarm_swap;
@@ -148,6 +149,7 @@ __NORET static void usage(char *prog, int code)
 		"  -p,  --pixmap-path <path>      alternative path to pixmap files\n"
 		"  -r,  --resolution <number>     memory resolution steps (default 10)\n"
 		"                                 Note: pixmaps must match resolution\n"
+		"  -n,  --no-splash               disable splash screen\n"
 		"  -m,  --alarm-mem <percentage>  activate alarm mode of memory. <percentage>\n"
 		"                                 is threshold of percentage from 0 to 100.\n"
 		"                                 (default off)\n"
@@ -166,6 +168,7 @@ static struct option longopts[] = {
 	{ "version",    no_argument,       0, 'v'},
 	{ "pixmap-path",required_argument, 0, 'p'},
 	{ "resolution", required_argument, 0, 'r'},
+	{ "no-splash",  no_argument,       0, 'n'},
 	{ "alarm-mem",  required_argument, 0, 'm'},
 	{ "alarm-swap", required_argument, 0, 's'},
 	IGNORE_BUFFERS_OPTION IGNORE_CACHED_OPTION IGNORE_WIRED_OPTION
@@ -182,7 +185,7 @@ static void parse_arguments(int argc, char *argv[], config_t *config)
 	int c;
 
 	do {
-		c = getopt_long(argc, argv, "d:bi:hvp:r:m:s:" OPTSTRING, longopts,
+		c = getopt_long(argc, argv, "bd:hi:m:np:r:s:v" OPTSTRING, longopts,
 				NULL);
 
 		switch (c)
@@ -224,6 +227,9 @@ static void parse_arguments(int argc, char *argv[], config_t *config)
 							"[10; 24]!\n");
 					usage(program_invocation_name, -1);
 				}
+				break;
+			case 'n':
+				config->splash = false;
 				break;
 			case 'm':
 				arg2size_t(optarg, &config->alarm_mem);
@@ -468,6 +474,54 @@ static bool init_pixmaps(DAShapedPixmap *pixmaps[], config_t *config)
 	return ret;
 }
 
+static void splash(DAShapedPixmap *pixmaps[], config_t *config,
+		pixmap_coords_t *ptr)
+{
+	int memory[2];
+	size_t i;
+	XEvent event;
+
+	if (config->splash)
+	{
+		/* splash */
+		for (i = 0; i <= (4 * config->resolution); i++)
+		{
+			if (i <= config->resolution)
+			{	/* increasing memory usage */
+				memory[0] = i * config->steps;
+				memory[1] = 0;
+			}
+			else if (i <= (2 * config->resolution))
+			{	/* increasing swap usage */
+				memory[0] = 100;
+				memory[1] = (i - config->resolution) * config->steps;
+			}
+			else if (i <= (3 * config->resolution))
+			{	/* decreasing swap usage */
+				memory[0] = 100;
+				memory[1] = 100 - ((i - 2 * config->resolution) * config->steps);
+			}
+			else
+			{	/* decreasing memory usage */
+				memory[0] = 100 - ((i - 3 * config->resolution) * config->steps);
+				memory[1] = 0;
+			}
+
+			draw_canvas(pixmaps, memory, config->lit, config, ptr);
+
+			if (DANextEventOrTimeout(&event, 80))
+			{
+				break;
+			}
+		}
+	}
+	else
+	{
+		mem_getusage(memory, &config->mem_opts);
+		draw_canvas(pixmaps, memory, config->lit, config, ptr);
+	}
+}
+
 int main(int argc, char *argv[])
 {
 	size_t i;
@@ -476,6 +530,7 @@ int main(int argc, char *argv[])
 	DAShapedPixmap *pixmaps[PM_TYPE_MAX];
 	int memory_usage[2] = { 0 }, isalarm = 0, was_lit;
 	config_t config = {
+		.splash = true,
 		.update_interval = 1,
 		.alarm_mem = 101,
 		.alarm_swap = 101,
@@ -511,35 +566,7 @@ int main(int argc, char *argv[])
 	DASetPixmap(pixmaps[PM_TYPE_CANVAS]->pixmap);
 	DAShow();
 
-	/* splash */
-	for (i = 0; i <= (4 * config.resolution); i++)
-	{
-		if (i <= config.resolution)
-		{	/* increasing memory usage */
-			memory_usage[0] = i * config.steps;
-			memory_usage[1] = 0;
-		}
-		else if (i <= (2 * config.resolution))
-		{	/* increasing swap usage */
-			memory_usage[0] = 100;
-			memory_usage[1] = (i - config.resolution) * config.steps;
-		}
-		else if (i <= (3 * config.resolution))
-		{	/* decreasing swap usage */
-			memory_usage[0] = 100;
-			memory_usage[1] = 100 - ((i - 2 * config.resolution) * config.steps);
-		}
-		else
-		{	/* decreasing memory usage */
-			memory_usage[0] = 100 - ((i - 3 * config.resolution) * config.steps);
-			memory_usage[1] = 0;
-		}
-		draw_canvas(pixmaps, memory_usage, config.lit, &config, ptr);
-		if (DANextEventOrTimeout(&event, 80))
-		{
-			break;
-		}
-	}
+	splash(pixmaps, &config, ptr);
 
 	XSelectInput(DAGetDisplay(NULL), DAWindow, ButtonPressMask);
 
