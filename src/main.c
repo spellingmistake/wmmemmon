@@ -28,34 +28,29 @@
 
 #include "mem.h"
 
-#include "backdrop_on.xpm"
-#include "backdrop_off.xpm"
-#include "parts_mem.xpm"
-#include "parts_swap.xpm"
-
 #define CANVAS_SIZE 58
 
-#define MEM_HEIGHT  44
-#define MEM_WIDTH   22
-#define MEM_LX       7
-#define MEM_RX      29
-#define MEM_Y        7
-
-#define SWP_HEIGHT  22
-#define SWP_WIDTH   11
-#define SWP_LX      18
-#define SWP_RX      29
-#define SWP_Y       18
-
+/* default resolution */
 #define RESOLUTION  10
-#define STEPS       (100 / RESOLUTION)
 
 #define countof(x) (sizeof((x)) / sizeof((x)[0]))
 
 static int finalize;
 
+typedef enum pixmap_type_t pixmap_type_t;
+
+enum pixmap_type_t {
+	PM_TYPE_BACK_ON,
+	PM_TYPE_BACK_OFF,
+	PM_TYPE_PARTS_MEM,
+	PM_TYPE_PARTS_SWP,
+	PM_TYPE_CANVAS,
+	PM_TYPE_MAX,
+};
+
 typedef struct config_t config_t;
 typedef struct offset_table_t offset_table_t;
+typedef struct pixmap_coords_t pixmap_coords_t;
 
 struct config_t {
 	char *display_name;
@@ -63,7 +58,20 @@ struct config_t {
 	size_t update_interval;
 	size_t alarm_mem;
 	size_t alarm_swap;
+	size_t resolution;
+	size_t steps;
 	mem_options_t mem_opts;
+	const char *pixmap_names[PM_TYPE_MAX];
+	const char *pixmap_path;
+};
+
+struct pixmap_coords_t {
+	size_t height;
+	size_t width;
+	size_t x_left;
+	size_t x_rght;
+	size_t y;
+	bool use_resolution;
 };
 
 struct offset_table_t {
@@ -71,14 +79,56 @@ struct offset_table_t {
 	int y_offset;
 };
 
-enum pixmap_type_t {
-	BACK_OFF,
-	BACK_ON,
-	PRTS_MEM,
-	PRTS_SWP,
-	CANVAS,
-	PIXMAP_MAX,
+static pixmap_coords_t coords[] = {
+	{
+		.height = 44,
+		.width = 22,
+		.x_left = 7,
+		.x_rght = 29,
+		.y = 7,
+		.use_resolution = true,
+	},
+	{
+		.height = 22,
+		.width = 11,
+		.x_left = 18,
+		.x_rght = 29,
+		.y = 18,
+		.use_resolution = true,
+	},
+	{
+		.height = CANVAS_SIZE,
+		.width = CANVAS_SIZE,
+	},
 };
+
+static pixmap_coords_t *get_pixmap_coords(pixmap_type_t type)
+{
+	pixmap_coords_t *ret;
+
+	switch (type)
+	{
+		case PM_TYPE_PARTS_MEM:
+			ret = &coords[0];
+			break;
+		case PM_TYPE_PARTS_SWP:
+			ret = &coords[1];
+			break;
+		case PM_TYPE_BACK_ON:
+		case PM_TYPE_BACK_OFF:
+		case PM_TYPE_CANVAS:
+			ret = &coords[2];
+			break;
+		default:
+			fprintf(stdout, "unable to determine pixmap coordinates for "
+					"type %u\n", type);
+			abort();
+			ret = NULL;
+			break;
+	}
+
+	return ret;
+}
 
 static void sighandler(int signal __attribute__((unused)))
 {
@@ -91,16 +141,20 @@ __NORET static void usage(char *prog, int code)
 		"%s - Window Maker memory/swap monitor dockapp\n"
 		"  -d,  --display <string>        display to use\n"
 		"  -b,  --backlight               turn on back-light\n"
-		"  -i,  --interval <number>       number of secs between updates (1 is default)\n"
+		"  -i,  --interval <number>       number of secs between updates (default 1)\n"
 		IGNORE_BUFFERS_HELPTEXT IGNORE_CACHED_HELPTEXT IGNORE_WIRED_HELPTEXT
 		"  -h,  --help                    show this help text and exit\n"
 		"  -v,  --version                 show program version and exit\n"
+		"  -p,  --pixmap-path <path>      alternative path to pixmap files\n"
+		"  -r,  --resolution <number>     memory resolution steps (default 10)\n"
+		"                                 Note: pixmaps must match resolution\n"
 		"  -m,  --alarm-mem <percentage>  activate alarm mode of memory. <percentage>\n"
 		"                                 is threshold of percentage from 0 to 100.\n"
-		"                                 (90 is default)\n"
+		"                                 (default off)\n"
 		"  -s,  --alarm-swap <percentage> activate alarm mode of swap. <percentage> is\n"
 		"                                 threshold of percentage from 0 to 100.\n"
-		"                                 (50 is default)\n", prog, PACKAGE);
+		"                                 (default off)\n",
+		prog, PACKAGE);
 	exit(code);
 }
 
@@ -110,6 +164,8 @@ static struct option longopts[] = {
 	{ "interval",   required_argument, 0, 'i'},
 	{ "help",       no_argument,       0, 'h'},
 	{ "version",    no_argument,       0, 'v'},
+	{ "pixmap-path",required_argument, 0, 'p'},
+	{ "resolution", required_argument, 0, 'r'},
 	{ "alarm-mem",  required_argument, 0, 'm'},
 	{ "alarm-swap", required_argument, 0, 's'},
 	IGNORE_BUFFERS_OPTION IGNORE_CACHED_OPTION IGNORE_WIRED_OPTION
@@ -126,7 +182,8 @@ static void parse_arguments(int argc, char *argv[], config_t *config)
 	int c;
 
 	do {
-		c = getopt_long(argc, argv, "d:bi:hvm:s:" OPTSTRING, longopts, NULL);
+		c = getopt_long(argc, argv, "d:bi:hvp:r:m:s:" OPTSTRING, longopts,
+				NULL);
 
 		switch (c)
 		{
@@ -151,6 +208,22 @@ static void parse_arguments(int argc, char *argv[], config_t *config)
 			case 'v':
 				printf("%s version %s\n", PACKAGE, VERSION);
 				exit(0);
+				break;
+			case 'p':
+				config->pixmap_path = optarg;
+				break;
+			case 'r':
+				arg2size_t(optarg, &config->resolution);
+				if (10 <= config->resolution && 24 >= config->resolution)
+				{
+					config->steps = (100 / config->resolution);
+				}
+				else
+				{
+					fprintf(stderr, "memory resolution must not be "
+							"[10; 24]!\n");
+					usage(program_invocation_name, -1);
+				}
 				break;
 			case 'm':
 				arg2size_t(optarg, &config->alarm_mem);
@@ -182,18 +255,18 @@ static void parse_arguments(int argc, char *argv[], config_t *config)
 
 	if (101 != config->alarm_mem && 101 != config->alarm_swap)
 	{
-		fprintf(stderr, "%s: select either '-m, --alarm-mem' or '-s, "
-				"--alarm-swap'\n", argv[0]);
-		exit(-1);
+		fprintf(stderr, "select either --alarm-mem or --alarm-swap\n");
+		usage(program_invocation_name, -1);
 	}
 }
 
-static inline void calc_x_offsets(int memory, int *xl, int *xr, int width)
+static inline void calc_x_offsets(size_t memory, int *xl, int *xr, int width,
+		config_t *config)
 {
-	if (memory > (RESOLUTION / 2))
+	if (memory > (config->resolution / 2))
 	{
 		*xl = memory;
-		*xr = (RESOLUTION / 2);
+		*xr = (config->resolution / 2);
 	}
 	else
 	{
@@ -205,47 +278,53 @@ static inline void calc_x_offsets(int memory, int *xl, int *xr, int width)
 	*xr *= width;
 }
 
-static void draw_mem_usage(DAShapedPixmap *pixmaps[], int memory[], int lit)
+static void draw_mem_usage(DAShapedPixmap *pixmaps[], size_t memory[], int lit,
+		config_t *config)
 {
 	int xl, xr;
+	pixmap_coords_t *ptr;
 
-	calc_x_offsets(memory[0], &xl, &xr, MEM_WIDTH);
+	ptr = get_pixmap_coords(PM_TYPE_PARTS_MEM);
+
+	calc_x_offsets(memory[0], &xl, &xr, ptr->width, config);
 
 	/* draw memory usage - outside, right part, 0% - 50% */
 	if (xr)
 	{
-		xr -= MEM_WIDTH;
-		DASPCopyArea(pixmaps[PRTS_MEM], pixmaps[CANVAS], xr, MEM_HEIGHT * lit,
-				MEM_WIDTH, MEM_HEIGHT, MEM_RX, MEM_Y);
+		xr -= ptr->width;
+		DASPCopyArea(pixmaps[PM_TYPE_PARTS_MEM], pixmaps[PM_TYPE_CANVAS],
+				xr, ptr->height * lit, ptr->width, ptr->height,
+				ptr->x_rght, ptr->y);
 	}
 
 	/* draw memory usage - outside, right part, 51% - 100% */
-	if (xl > (5 * MEM_WIDTH))
+	if ((size_t)xl > (5 * ptr->width))
 	{
-		xl -= MEM_WIDTH;
-		DASPCopyArea(pixmaps[PRTS_MEM], pixmaps[CANVAS], xl, MEM_HEIGHT * lit,
-				MEM_WIDTH, MEM_HEIGHT, MEM_LX, MEM_Y);
+		xl -= ptr->width;
+		DASPCopyArea(pixmaps[PM_TYPE_PARTS_MEM], pixmaps[PM_TYPE_CANVAS],
+				xl, ptr->height * lit, ptr->width, ptr->height,
+				ptr->x_left, ptr->y);
 	}
 }
 
 static inline void func(DAShapedPixmap *pixmaps[], int x1, int x2, int yo,
 		int sign, int lit, int start, int end,
-		const offset_table_t *offset_table)
+		const offset_table_t *offset_table, pixmap_coords_t *ptr)
 {
 	int xo, i;
 
 	if (x1)
 	{
 		xo = 0;
-		x1 -= SWP_WIDTH;
+		x1 -= ptr->width;
 		i = start;
 
 		do
 		{
-			DASPCopyArea(pixmaps[PRTS_SWP], pixmaps[CANVAS],
-					x1 + xo, SWP_HEIGHT * lit + yo,
-					offset_table[i].width, SWP_HEIGHT - 2 * yo,
-					x2 + xo, SWP_Y + yo);
+			DASPCopyArea(pixmaps[PM_TYPE_PARTS_SWP], pixmaps[PM_TYPE_CANVAS],
+					x1 + xo, ptr->height * lit + yo,
+					offset_table[i].width, ptr->height - 2 * yo,
+					x2 + xo, ptr->y + yo);
 			xo += offset_table[i].width;
 			yo += offset_table[i].y_offset * sign;
 
@@ -255,9 +334,11 @@ static inline void func(DAShapedPixmap *pixmaps[], int x1, int x2, int yo,
 	}
 }
 
-static void draw_swap_usage(DAShapedPixmap *pixmaps[], int memory[], int lit)
+static void draw_swap_usage(DAShapedPixmap *pixmaps[], size_t memory[], int lit,
+		config_t *config)
 {
 	int xl, xr;
+	pixmap_coords_t *ptr;
 	// TODO: if we can draw the swap usage at once, this would simplify the
 	// code massively
 	static const offset_table_t offsets[] = {
@@ -270,96 +351,190 @@ static void draw_swap_usage(DAShapedPixmap *pixmaps[], int memory[], int lit)
 		{ 1, 1, },
 	};
 
-	calc_x_offsets(memory[1], &xl, &xr, SWP_WIDTH);
+	ptr = get_pixmap_coords(PM_TYPE_PARTS_SWP);
+	calc_x_offsets(memory[1], &xl, &xr, ptr->width, config);
 
 	/* draw swap usage - inside, right part, 0% - 50% */
-	func(pixmaps, xr, SWP_RX, 0, 1, lit, 0, countof(offsets), offsets);
+	func(pixmaps, xr, ptr->x_rght, 0, 1, lit, 0, countof(offsets),
+			offsets, ptr);
 
 	/* draw swap usage - inside, left part, 51% - 100% */
-	func(pixmaps, xl, SWP_LX, 6, -1, lit, countof(offsets) - 1, 0 - 1, offsets);
+	func(pixmaps, xl, ptr->x_left, 6, -1, lit, countof(offsets) - 1, 0 - 1,
+			offsets, ptr);
 }
 
 /**
  * pixmaps: backdrop_on, backdrop_off, memory, swap, canvas
  */
-static void draw_canvas(DAShapedPixmap *pixmaps[], const int memory[], int lit)
+static void draw_canvas(DAShapedPixmap *pixmaps[], const int memory[], int lit,
+		config_t *config, pixmap_coords_t *ptr)
 {
-	int mem[2] = {
-		memory[0] / STEPS,
-		memory[1] / STEPS,
+	size_t mem[2] = {
+		memory[0] / config->steps,
+		memory[1] / config->steps,
 	};
 
-	if (mem[0] > (100 / STEPS))
+	if (mem[0] > (100 / config->steps))
 	{
-		mem[0] = (100 / STEPS);
+		mem[0] = (100 / config->steps);
 	}
 
 	/* reset canvas with background image */
-	DASPCopyArea(pixmaps[lit], pixmaps[CANVAS], 0, 0,
-			CANVAS_SIZE, CANVAS_SIZE, 0, 0);
+	DASPCopyArea(pixmaps[lit], pixmaps[PM_TYPE_CANVAS], 0, 0,
+			ptr->width, ptr->height, 0, 0);
 
-	draw_mem_usage(pixmaps, mem, lit);
-	draw_swap_usage(pixmaps, mem, lit);
+	draw_mem_usage(pixmaps, mem, lit, config);
+	draw_swap_usage(pixmaps, mem, lit, config);
 
-	XCopyArea(DAGetDisplay(NULL), pixmaps[CANVAS]->pixmap, DAWindow, DAGC, 0, 0,
-			CANVAS_SIZE, CANVAS_SIZE, 0, 0);
+	XCopyArea(DAGetDisplay(NULL), pixmaps[PM_TYPE_CANVAS]->pixmap,
+			DAWindow, DAGC, 0, 0, ptr->width, ptr->height, 0, 0);
+}
+
+static bool check_resolution(DAShapedPixmap *pixmap, pixmap_type_t type,
+		char *file_name, config_t *config)
+{
+	size_t w, h;
+	bool ret = true;
+	pixmap_coords_t *ptr;
+
+	ptr = get_pixmap_coords(type);
+
+	if (ptr->use_resolution)
+	{
+		w = config->resolution * ptr->width;
+		h = 2 * ptr->height;
+	}
+	else
+	{
+		w = ptr->width;
+		h = ptr->width;
+	}
+
+	if ((pixmap->geometry.width < w) || (pixmap->geometry.height < h))
+	{
+		fprintf(stderr, "insufficient pixmap height for '%s', "
+				"required %zux%zu, found %dx%d\n", file_name, w, h,
+				pixmap->geometry.width, pixmap->geometry.height);
+		ret = false;
+	}
+
+	return ret;
+}
+
+static bool init_pixmaps(DAShapedPixmap *pixmaps[], config_t *config)
+{
+	char buf[FILENAME_MAX];
+	size_t i;
+	bool ret = true;
+
+	for (i = 0; i < countof(config->pixmap_names); ++i)
+	{
+		if (config->pixmap_names[i])
+		{
+			snprintf(buf, sizeof(buf), "%s/%s", config->pixmap_path,
+					config->pixmap_names[i]);
+			pixmaps[i] = DAMakeShapedPixmapFromFile(buf);
+
+			if (!pixmaps[i])
+			{
+				fprintf(stderr, "failed to open pixmap file '%s'\n", buf);
+				ret = false;
+				break;
+			}
+
+			if (!check_resolution(pixmaps[i], i, buf, config))
+			{
+				ret = false;
+				break;
+			}
+		}
+		else
+		{
+			pixmaps[PM_TYPE_CANVAS] = DAMakeShapedPixmap();
+		}
+	}
+
+	if (!ret)
+	{
+		for (i = 0; i < countof(config->pixmap_names); ++i)
+		{
+			if (pixmaps[i])
+			{
+				DAFreeShapedPixmap(pixmaps[i]);
+			}
+		}
+	}
+
+	return ret;
 }
 
 int main(int argc, char *argv[])
 {
 	size_t i;
 	XEvent event;
-	DAShapedPixmap *pixmaps[PIXMAP_MAX];
+	pixmap_coords_t *ptr;
+	DAShapedPixmap *pixmaps[PM_TYPE_MAX];
 	int memory_usage[2] = { 0 }, isalarm = 0, was_lit;
 	config_t config = {
 		.update_interval = 1,
 		.alarm_mem = 101,
 		.alarm_swap = 101,
+		.resolution = RESOLUTION,
+		.steps = (100 / RESOLUTION),
+		.pixmap_names = {
+			"backdrop_off.xpm",
+			"backdrop_on.xpm",
+			"parts_mem.xpm",
+			"parts_swap.xpm",
+		},
+		.pixmap_path = PIXMAP_DIR,
 	};
 
 	parse_arguments(argc, argv, &config);
 	signal(SIGTERM, sighandler);
 
+	ptr = get_pixmap_coords(PM_TYPE_CANVAS);
+
 	/* to make DAGetDisplay return DADisplay */
 	DASetExpectedVersion(20030126);
 	DAOpenDisplay(config.display_name, argc, argv);
-	DACreateIcon(PACKAGE, CANVAS_SIZE, CANVAS_SIZE, argc, argv);
+	DACreateIcon(PACKAGE, ptr->width, ptr->height, argc, argv);
 
-	pixmaps[BACK_OFF] = DAMakeShapedPixmapFromData(backdrop_off);
-	pixmaps[BACK_ON] = DAMakeShapedPixmapFromData(backdrop_on);
-	pixmaps[PRTS_MEM] = DAMakeShapedPixmapFromData(parts_mem);
-	pixmaps[PRTS_SWP] = DAMakeShapedPixmapFromData(parts_swap);
-	pixmaps[CANVAS] = DAMakeShapedPixmap();
+	if (!init_pixmaps(pixmaps, &config))
+	{
+		usage(program_invocation_name, -1);
+	}
 
-	DASetShapeWithOffsetForWindow(DAWindow, pixmaps[BACK_OFF]->shape, 0, 0);
-	draw_canvas(pixmaps, memory_usage, config.lit);
-	DASetPixmap(pixmaps[CANVAS]->pixmap);
+	DASetShapeWithOffsetForWindow(DAWindow, pixmaps[PM_TYPE_BACK_ON]->shape,
+			0, 0);
+	draw_canvas(pixmaps, memory_usage, config.lit, &config, ptr);
+	DASetPixmap(pixmaps[PM_TYPE_CANVAS]->pixmap);
 	DAShow();
 
 	/* splash */
-	for (i = 0; i <= (4 * RESOLUTION); i++)
+	for (i = 0; i <= (4 * config.resolution); i++)
 	{
-		if (i <= RESOLUTION)
+		if (i <= config.resolution)
 		{	/* increasing memory usage */
-			memory_usage[0] = i * STEPS;
+			memory_usage[0] = i * config.steps;
 			memory_usage[1] = 0;
 		}
-		else if (i <= (2 * RESOLUTION))
+		else if (i <= (2 * config.resolution))
 		{	/* increasing swap usage */
 			memory_usage[0] = 100;
-			memory_usage[1] = (i - RESOLUTION) * STEPS;
+			memory_usage[1] = (i - config.resolution) * config.steps;
 		}
-		else if (i <= (3 * RESOLUTION))
+		else if (i <= (3 * config.resolution))
 		{	/* decreasing swap usage */
 			memory_usage[0] = 100;
-			memory_usage[1] = 100 - ((i - 2 * RESOLUTION) * STEPS);
+			memory_usage[1] = 100 - ((i - 2 * config.resolution) * config.steps);
 		}
 		else
 		{	/* decreasing memory usage */
-			memory_usage[0] = 100 - ((i - 3 * RESOLUTION) * STEPS);
+			memory_usage[0] = 100 - ((i - 3 * config.resolution) * config.steps);
 			memory_usage[1] = 0;
 		}
-		draw_canvas(pixmaps, memory_usage, config.lit);
+		draw_canvas(pixmaps, memory_usage, config.lit, &config, ptr);
 		if (DANextEventOrTimeout(&event, 80))
 		{
 			break;
@@ -403,10 +578,10 @@ int main(int argc, char *argv[])
 			}
 		}
 
-		draw_canvas(pixmaps, memory_usage, config.lit);
+		draw_canvas(pixmaps, memory_usage, config.lit, &config, ptr);
 	}
 
-	for (i = 0; i < (sizeof(pixmaps) / sizeof(pixmaps[BACK_ON])); ++i)
+	for (i = 0; i < (sizeof(pixmaps) / sizeof(pixmaps[PM_TYPE_BACK_OFF])); ++i)
 	{
 		if (pixmaps[i])
 		{
