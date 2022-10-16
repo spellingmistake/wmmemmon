@@ -1,3 +1,10 @@
+2022 Oct 16
+  * version 1.2.1 released.
+  * make splash a little more playful and add '-n' to disable it
+  * add svgs and generator script to automatically generate pixmaps
+  * make resolution and pixmap path configurable
+  * modify build to catch a couple of warnings
+
 2022 Oct 10
   * version 1.2.0 released.
   * change to upstream libdockap
