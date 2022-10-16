@@ -6,6 +6,9 @@ wmmemmon_SOURCES = \
 	xpms/backdrop_off.xpm xpms/backdrop_on.xpm \
 	xpms/parts_mem.xpm xpms/parts_swap.xpm
 
+wmmemmon_CPPFLAGS = \
+	-DPIXMAP_DIR=\"${datarootdir}\"
+
 AM_CFLAGS = \
 	-Ixpms
 

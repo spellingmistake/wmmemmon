@@ -20,6 +20,8 @@ else
 	CFLAGS="$CFLAGS -O3"
 fi
 
+CFLAGS+=" -Wall -Wextra -Werror"
+
 AC_PROG_CC
 
 # use _GNU_SOURCE

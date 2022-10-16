@@ -116,7 +116,7 @@ static struct option longopts[] = {
 	{ 0 },
 };
 
-static void arg2size_t(char c, char *optarg , size_t *ptr)
+static void arg2size_t(char *optarg , size_t *ptr)
 {
 	*ptr = (size_t)strtoul(optarg, NULL, 10);
 }
@@ -137,7 +137,7 @@ static void parse_arguments(int argc, char *argv[], config_t *config)
 				config->lit = 1;
 				break;
 			case 'i':
-				arg2size_t(c, optarg, &config->update_interval);
+				arg2size_t(optarg, &config->update_interval);
 				if (0 == config->update_interval)
 				{
 					config->update_interval = 1;
@@ -153,10 +153,10 @@ static void parse_arguments(int argc, char *argv[], config_t *config)
 				exit(0);
 				break;
 			case 'm':
-				arg2size_t(c, optarg, &config->alarm_mem);
+				arg2size_t(optarg, &config->alarm_mem);
 				break;
 			case 's':
-				arg2size_t(c, optarg, &config->alarm_swap);
+				arg2size_t(optarg, &config->alarm_swap);
 				break;
 			/* the --ignore-<something> options can appear outside an ugly
 			 * ifdef; if they're not present in the optstring the case
@@ -207,7 +207,7 @@ static inline void calc_x_offsets(int memory, int *xl, int *xr, int width)
 
 static void draw_mem_usage(DAShapedPixmap *pixmaps[], int memory[], int lit)
 {
-	int xl, xr, xo, yo, i;
+	int xl, xr;
 
 	calc_x_offsets(memory[0], &xl, &xr, MEM_WIDTH);
 
@@ -257,7 +257,7 @@ static inline void func(DAShapedPixmap *pixmaps[], int x1, int x2, int yo,
 
 static void draw_swap_usage(DAShapedPixmap *pixmaps[], int memory[], int lit)
 {
-	int xl, xr, xo, yo, sign, i;
+	int xl, xr;
 	// TODO: if we can draw the swap usage at once, this would simplify the
 	// code massively
 	static const offset_table_t offsets[] = {
@@ -284,7 +284,7 @@ static void draw_swap_usage(DAShapedPixmap *pixmaps[], int memory[], int lit)
  */
 static void draw_canvas(DAShapedPixmap *pixmaps[], const int memory[], int lit)
 {
-	int xr, xl, xo, yo, i, sign, mem[2] = {
+	int mem[2] = {
 		memory[0] / STEPS,
 		memory[1] / STEPS,
 	};
@@ -307,9 +307,10 @@ static void draw_canvas(DAShapedPixmap *pixmaps[], const int memory[], int lit)
 
 int main(int argc, char *argv[])
 {
+	size_t i;
 	XEvent event;
 	DAShapedPixmap *pixmaps[PIXMAP_MAX];
-	int memory_usage[2] = { 0 }, i, isalarm = 0, was_lit;
+	int memory_usage[2] = { 0 }, isalarm = 0, was_lit;
 	config_t config = {
 		.update_interval = 1,
 		.alarm_mem = 101,
@@ -317,6 +318,7 @@ int main(int argc, char *argv[])
 	};
 
 	parse_arguments(argc, argv, &config);
+	signal(SIGTERM, sighandler);
 
 	/* to make DAGetDisplay return DADisplay */
 	DASetExpectedVersion(20030126);
@@ -373,7 +375,7 @@ int main(int argc, char *argv[])
 			switch(event.type)
 			{
 				case ButtonPress:
-					config.lit = ++(config.lit) % 2;
+					config.lit = (config.lit + 1) % 2;
 					break;
 				default:
 					continue;
@@ -384,12 +386,12 @@ int main(int argc, char *argv[])
 			mem_getusage(memory_usage, &config.mem_opts);
 
 			if (!isalarm &&
-				(memory_usage[0] >= config.alarm_mem ||
-				 memory_usage[1] >= config.alarm_swap))
+				((size_t)memory_usage[0] >= config.alarm_mem ||
+				 (size_t)memory_usage[1] >= config.alarm_swap))
 			{
 				was_lit = config.lit;
 				isalarm = 1;
-				config.lit = ++(config.lit) % 2;
+				config.lit = (config.lit + 1) % 2;
 			}
 			else
 			{

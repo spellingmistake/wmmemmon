@@ -91,7 +91,7 @@ static inline void debug_memory_output(u_int64_t mem[9])
 void mem_getusage(int *memory_usage, const mem_options_t *mem_opts)
 {
 	char buffer[BUFSIZ], *p;
-	int fd, len, i;
+	int fd, len;
 	u_int64_t mem[9] = { 0 };
 
 	/* read /proc/meminfo */
