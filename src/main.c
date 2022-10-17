@@ -31,7 +31,7 @@
 #define CANVAS_SIZE 58
 
 /* default resolution */
-#define RESOLUTION  10
+#define RESOLUTION  20
 
 #define countof(x) (sizeof((x)) / sizeof((x)[0]))
 
