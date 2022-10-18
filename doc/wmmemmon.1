@@ -1,7 +1,7 @@
 .\" First parameter, NAME, should be all caps
 .\" Second parameter, SECTION, should be 1-8, maybe w/ subsection
 .\" other parameters are allowed: see man(7), man(1)
-.TH WMMEMMON 1 "August 17, 2002"
+.TH WMMEMMON 1 "October 18, 2022"
 .\" Please adjust this date whenever revising the manpage.
 .\"
 .\" Some roff macros, for reference:
@@ -26,7 +26,7 @@ command.
 .\" TeX users may be more comfortable with the \fB<whatever>\fP and
 .\" \fI<whatever>\fP escape sequences to invode bold face and italics, 
 .\" respectively.
-\fBWMMemMon\fP is a program to monitor memory/swap usages. It is a dockapp that is supported by X window managers such as Window Maker, AfterStep, BlackBox, and
+\fBwmmemmon\fP is a program to monitor memory/swap usages. It is a dockapp that is supported by X window managers such as Window Maker, AfterStep, BlackBox, and
 Enlightenment.
 
 The current memory usage is displaied as the outside pie-slices.  The swap usage
@@ -48,9 +48,6 @@ environment variable is used.
 .B \-b, \-\-backlight
 turn on back-light.
 .TP
-.B \-lc, \-\-light\-color <color>
-back-light color. (rgb:6E/C6/3B is default)
-.TP
 .B \-i,  \-\-interval <number>
 number of secs between updates. (1 is default)
 .TP
@@ -69,22 +66,28 @@ show help text and exit.
 .B \-v,  \-\-version
 show program version and exit.
 .TP
+.B \-p,  \-\-pixmap-path <path>
+alternative path to pixmap files (datarootdir)
+.TP
+.B \-r,  \-\-resolution <number>
+memory resolution steps (default 20), must match with pixmap size
+.TP
+.B \-n,  \-\-no-splash
+disable splash screen
+.TP
+.B \-m,  \-\-alarm\-mem <percentage>
+activate alarm mode of memory. <percentage> is threshold of percentage from 0
+to 100. (default off)
+.TP
+.B \-s,  \-\-alarm\-swap <percentage>
+activate alarm mode of swap. <percentage> is threshold of percentage from 0 to
+100. (default off)
+.TP
 .B \-w,  \-\-windowed
 run the application in windowed mode
 .TP
-.B \-wp, \-\-windowed-withpanel
-run the application in windowed mode with background panel
-.TP
-.B \-bw, \-\-broken\-wm
-activate broken window manager fix
-.TP
-.B \-a,  \-\-alarm\-mem <percentage>
-activate alarm mode of memory. <percentage> is threshold of percentage from 0
-to 100.(90 is default)
-.TP
-.B \-a,  \-\-alarm\-swap <percentage>
-activate alarm mode of swap. <percentage> is threshold of percentage from 0 to
-100.(50 is default)
+.B \-t,  \-\-title
+application title name
 
 .SH AUTHOR
-WMMemMon was written by Seiichi SATO <ssato@sh.rim.or.jp>.
+wmmemmon was written by Seiichi SATO <ssato@sh.rim.or.jp> and heavily adapted by Thomas Egerer <thomas.egerer@port22.eu>.
