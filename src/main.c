@@ -154,7 +154,7 @@ __NORET static void usage(char *prog, int code)
 		"  -h,  --help                    show this help text and exit\n"
 		"  -v,  --version                 show program version and exit\n"
 		"  -p,  --pixmap-path <path>      alternative path to pixmap files\n"
-		"  -r,  --resolution <number>     memory resolution steps (default 10)\n"
+		"  -r,  --resolution <number>     memory resolution steps (default %u)\n"
 		"                                 Note: pixmaps must match resolution\n"
 		"  -n,  --no-splash               disable splash screen\n"
 		"  -m,  --alarm-mem <percentage>  activate alarm mode of memory. <percentage>\n"
@@ -165,7 +165,7 @@ __NORET static void usage(char *prog, int code)
 		"                                 (default off)\n"
 		"  -w,  --windowed                run the application in windowed mode\n"
 		"  -t,  --title <title>           application title name\n",
-		prog, PACKAGE);
+		prog, PACKAGE, RESOLUTION);
 	exit(code);
 }
 
