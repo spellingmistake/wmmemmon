@@ -89,7 +89,7 @@ AC_SUBST(SETGID_FLAGS)
 
 AX_DEFINE_HELPTEXT_AND_OPTION([buffers], [u])
 AX_DEFINE_HELPTEXT_AND_OPTION([cached ], [c])
-AX_DEFINE_HELPTEXT_AND_OPTION([wired  ], [w])
+AX_DEFINE_HELPTEXT_AND_OPTION([wired  ], [e])
 
 AC_DEFINE_UNQUOTED(OPTSTRING, ["$OPTSTRING"], [additional values for getopt_long(3) optstring])
 
