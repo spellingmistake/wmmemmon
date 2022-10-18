@@ -161,7 +161,8 @@ __NORET static void usage(char *prog, int code)
 		"                                 (default off)\n"
 		"  -s,  --alarm-swap <percentage> activate alarm mode of swap. <percentage> is\n"
 		"                                 threshold of percentage from 0 to 100.\n"
-		"                                 (default off)\n",
+		"                                 (default off)\n"
+		"  -w,  --windowed                run the application in windowed mode\n",
 		prog, PACKAGE);
 	exit(code);
 }
@@ -177,6 +178,7 @@ static struct option longopts[] = {
 	{ "no-splash",  no_argument,       0, 'n'},
 	{ "alarm-mem",  required_argument, 0, 'm'},
 	{ "alarm-swap", required_argument, 0, 's'},
+	{ "windowed",   no_argument,       0, 'w'},
 	IGNORE_BUFFERS_OPTION IGNORE_CACHED_OPTION IGNORE_WIRED_OPTION
 	{ 0 },
 };
@@ -190,9 +192,10 @@ static void parse_arguments(int argc, char *argv[], config_t *config,
 		char *wa_argv[] __UNUSED, int *wa_argc __UNUSED)
 {
 	int c;
+	bool windowed = false;
 
 	do {
-		c = getopt_long(argc, argv, "bd:hi:m:np:r:s:v" OPTSTRING, longopts,
+		c = getopt_long(argc, argv, "bd:hi:m:np:r:s:vw" OPTSTRING, longopts,
 				NULL);
 
 		switch (c)
@@ -257,6 +260,9 @@ static void parse_arguments(int argc, char *argv[], config_t *config,
 			case SHORT_OPTION_IGNORE_WIRED:
 				config->mem_opts.ignore_wired = true;
 				break;
+			case 'w':
+				windowed = true;
+				break;
 			case -1:
 				break;
 			default:
@@ -270,6 +276,12 @@ static void parse_arguments(int argc, char *argv[], config_t *config,
 	{
 		fprintf(stderr, "select either --alarm-mem or --alarm-swap\n");
 		usage(program_invocation_name, -1);
+	}
+
+	if (windowed)
+	{
+		wa_argv[*wa_argc] = "-w";
+		++(*wa_argc);
 	}
 }
 
