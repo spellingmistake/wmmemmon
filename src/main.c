@@ -186,7 +186,8 @@ static void arg2size_t(char *optarg , size_t *ptr)
 	*ptr = (size_t)strtoul(optarg, NULL, 10);
 }
 
-static void parse_arguments(int argc, char *argv[], config_t *config)
+static void parse_arguments(int argc, char *argv[], config_t *config,
+		char *wa_argv[] __UNUSED, int *wa_argc __UNUSED)
 {
 	int c;
 
@@ -553,8 +554,9 @@ int main(int argc, char *argv[])
 	size_t i;
 	XEvent event;
 	pixmap_coords_t *ptr;
+	char *wa_argv[3] = { PACKAGE, };
 	DAShapedPixmap *pixmaps[PM_TYPE_MAX];
-	int memory_usage[2] = { 0 }, isalarm = 0, was_lit;
+	int memory_usage[2] = { 0 }, isalarm = 0, was_lit, wa_argc;
 	config_t config = {
 		.splash = true,
 		.update_interval = 1,
@@ -571,11 +573,13 @@ int main(int argc, char *argv[])
 		.pixmap_path = PIXMAP_DIR,
 	};
 
-	parse_arguments(argc, argv, &config);
+	wa_argc = 1;
+	parse_arguments(argc, argv, &config, wa_argv, &wa_argc);
 	signal(SIGTERM, sighandler);
 
 	ptr = get_pixmap_coords(PM_TYPE_CANVAS);
 
+	DAParseArguments(wa_argc, wa_argv, NULL, 0, NULL, NULL);
 	/* to make DAGetDisplay return DADisplay */
 	DASetExpectedVersion(20030126);
 	DAOpenDisplay(config.display_name, argc, argv);
