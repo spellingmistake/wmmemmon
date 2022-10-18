@@ -589,6 +589,7 @@ int main(int argc, char *argv[])
 			"parts_swap.xpm",
 		},
 		.pixmap_path = PIXMAP_DIR,
+		.title = PACKAGE,
 	};
 
 	wa_argc = 1;
