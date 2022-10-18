@@ -1,4 +1,7 @@
 * only linux build has been tested, all BSDs, cygwin etc. are untested
+* option for 'no-focus'
+* screen placement
+* use DA-callbacks
 ? other OS support (patches are welcome)
 ? optimize drawing-routines (MIT-SHM)
 ? Non-GNU make fix
