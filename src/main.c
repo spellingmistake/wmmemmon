@@ -70,6 +70,7 @@ struct config_t {
 	mem_options_t mem_opts;
 	const char *pixmap_names[PM_TYPE_MAX];
 	const char *pixmap_path;
+	char *title;
 };
 
 struct pixmap_coords_t {
@@ -162,7 +163,8 @@ __NORET static void usage(char *prog, int code)
 		"  -s,  --alarm-swap <percentage> activate alarm mode of swap. <percentage> is\n"
 		"                                 threshold of percentage from 0 to 100.\n"
 		"                                 (default off)\n"
-		"  -w,  --windowed                run the application in windowed mode\n",
+		"  -w,  --windowed                run the application in windowed mode\n"
+		"  -t,  --title <title>           application title name\n",
 		prog, PACKAGE);
 	exit(code);
 }
@@ -179,6 +181,7 @@ static struct option longopts[] = {
 	{ "alarm-mem",  required_argument, 0, 'm'},
 	{ "alarm-swap", required_argument, 0, 's'},
 	{ "windowed",   no_argument,       0, 'w'},
+	{ "title",      required_argument, 0, 't'},
 	IGNORE_BUFFERS_OPTION IGNORE_CACHED_OPTION IGNORE_WIRED_OPTION
 	{ 0 },
 };
@@ -195,7 +198,7 @@ static void parse_arguments(int argc, char *argv[], config_t *config,
 	bool windowed = false;
 
 	do {
-		c = getopt_long(argc, argv, "bd:hi:m:np:r:s:vw" OPTSTRING, longopts,
+		c = getopt_long(argc, argv, "bd:hi:m:np:r:s:t:vw" OPTSTRING, longopts,
 				NULL);
 
 		switch (c)
@@ -262,6 +265,9 @@ static void parse_arguments(int argc, char *argv[], config_t *config,
 				break;
 			case 'w':
 				windowed = true;
+				break;
+			case 't':
+				wa_argv[0] = optarg;
 				break;
 			case -1:
 				break;
@@ -595,7 +601,7 @@ int main(int argc, char *argv[])
 	/* to make DAGetDisplay return DADisplay */
 	DASetExpectedVersion(20030126);
 	DAOpenDisplay(config.display_name, argc, argv);
-	DACreateIcon(PACKAGE, ptr->width, ptr->height, argc, argv);
+	DACreateIcon(config.title, ptr->width, ptr->height, argc, argv);
 
 	if (!init_pixmaps(pixmaps, &config))
 	{
