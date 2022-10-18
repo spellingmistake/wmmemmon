@@ -33,6 +33,12 @@
 /* default resolution */
 #define RESOLUTION  20
 
+#ifndef DEBUG
+# define _U __attribute((unused))
+#else	/* #ifdef DEBUG */
+# define _U
+#endif	/* #ifdef DEBUG */
+
 #define countof(x) (sizeof((x)) / sizeof((x)[0]))
 
 static int finalize;
@@ -427,9 +433,36 @@ static bool check_resolution(DAShapedPixmap *pixmap, pixmap_type_t type,
 	return ret;
 }
 
-static bool init_pixmaps(DAShapedPixmap *pixmaps[], config_t *config)
+static bool open_pixmap(DAShapedPixmap *pixmaps[], pixmap_type_t type,
+		const char *path, config_t *config)
 {
 	char buf[FILENAME_MAX];
+	bool ret = true;
+
+	snprintf(buf, sizeof(buf), "%s%s/%s", path ?: config->pixmap_path,
+			path ? "/xpms" : "", config->pixmap_names[type]);
+	pixmaps[type] = DAMakeShapedPixmapFromFile(buf);
+
+	if (!pixmaps[type])
+	{
+		fprintf(stderr, "failed to open pixmap file '%s'\n", buf);
+		ret = false;
+	}
+	else if (!check_resolution(pixmaps[type], type, buf, config))
+	{
+		ret = false;
+	}
+	else
+	{
+		fprintf(stdout, "switching to alternative path'%s'\n", buf);
+	}
+
+	return ret;
+}
+
+static bool init_pixmaps(DAShapedPixmap *pixmaps[], config_t *config)
+{
+	char buf[FILENAME_MAX] _U;
 	size_t i;
 	bool ret = true;
 
@@ -437,18 +470,11 @@ static bool init_pixmaps(DAShapedPixmap *pixmaps[], config_t *config)
 	{
 		if (config->pixmap_names[i])
 		{
-			snprintf(buf, sizeof(buf), "%s/%s", config->pixmap_path,
-					config->pixmap_names[i]);
-			pixmaps[i] = DAMakeShapedPixmapFromFile(buf);
-
-			if (!pixmaps[i])
-			{
-				fprintf(stderr, "failed to open pixmap file '%s'\n", buf);
-				ret = false;
-				break;
-			}
-
-			if (!check_resolution(pixmaps[i], i, buf, config))
+			if (!open_pixmap(pixmaps, i, NULL, config)
+#ifdef DEBUG
+				&& !open_pixmap(pixmaps, i, getcwd(buf, sizeof(buf)), config)
+#endif
+				)
 			{
 				ret = false;
 				break;
