@@ -573,7 +573,7 @@ int main(int argc, char *argv[])
 	XEvent event;
 	pixmap_coords_t *ptr;
 	char *wa_argv[3] = { PACKAGE, };
-	DAShapedPixmap *pixmaps[PM_TYPE_MAX];
+	DAShapedPixmap *pixmaps[PM_TYPE_MAX] = { 0 };
 	int memory_usage[2] = { 0 }, isalarm = 0, was_lit, wa_argc;
 	config_t config = {
 		.splash = true,
