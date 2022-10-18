@@ -1,8 +1,8 @@
 #!/bin/bash
 
 backgrounds="off on"
-mem_dimensions=( 22 44  7  7)
-swap_dimensions=(11 22 18 18)
+mem_dimensions=( 22 44 10 10)
+swap_dimensions=(11 22 21 21)
 number_format="%02d"
 
 ###

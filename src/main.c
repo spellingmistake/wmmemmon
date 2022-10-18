@@ -28,7 +28,7 @@
 
 #include "mem.h"
 
-#define CANVAS_SIZE 58
+#define CANVAS_SIZE 64
 
 /* default resolution */
 #define RESOLUTION  20
@@ -84,17 +84,17 @@ static pixmap_coords_t coords[] = {
 	{
 		.height = 44,
 		.width = 22,
-		.x_left = 7,
-		.x_rght = 29,
-		.y = 7,
+		.x_left = 10,
+		.x_rght = 32,
+		.y = 10,
 		.use_resolution = true,
 	},
 	{
 		.height = 22,
 		.width = 11,
-		.x_left = 18,
-		.x_rght = 29,
-		.y = 18,
+		.x_left = 21,
+		.x_rght = 32,
+		.y = 21,
 		.use_resolution = true,
 	},
 	{
